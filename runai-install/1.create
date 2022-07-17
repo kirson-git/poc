@@ -20,7 +20,7 @@ kubectl create namespace runai-backend
 kubectl create -f runai-gcr-secret.yml
 
 runai-adm generate-values --domain  $DOMAIN --tls-cert  ssl/$DOMAIN/cert.pem \
-    --tls-key ssl/$DOMAIN/key.pem --nfs-server $NFS  --nfs-path $NFS_PATH 
+    --tls-key ssl/$DOMAIN/key.pem --nfs-server $NFS  --nfs-path $NFS_PATH --external-ips $EXTERNAL 
 
 echo "File was Created...."
 echo 

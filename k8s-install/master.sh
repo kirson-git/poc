@@ -45,7 +45,7 @@ sudo chown $(id -u):$(id -g) .kube/config
 
 wget https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz
 tar zxvf helm-v3.9.0-linux-amd64.tar.gz
-mv linux-amd64/helm /usr/local/bin/helm
+sudo mv linux-amd64/helm /usr/local/bin/helm
 
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ### Use the following to install NVIDIA Operator

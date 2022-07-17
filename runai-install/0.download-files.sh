@@ -7,6 +7,9 @@ sudo mv runai-adm /usr/local/bin/runai-adm
 
 echo "Download HELM3 "
 wget https://get.helm.sh/helm-v3.9.1-linux-amd64.tar.gz
+tar zxfv helm-v3.9.1-linux-amd64.tar.gz
 chmod +x linux-amd64/helm
 sudo mv linux-amd64/helm /usr/local/bin/helm
+
+
 

@@ -22,5 +22,5 @@ deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 sudo apt-get update
 sudo apt-get install -y kubelet=1.23.5-00 kubeadm=1.23.5-00
-
+sudo apt install nfs-common
 sudo swapoff -a
