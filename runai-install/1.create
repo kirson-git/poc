@@ -2,6 +2,7 @@
 DOMAIN=
 NFS=
 NFS_PATH=
+EXTERNA=
 
 echo "Please select node to label"
 kubectl get nodes 
