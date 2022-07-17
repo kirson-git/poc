@@ -50,5 +50,6 @@ sudo mv linux-amd64/helm /usr/local/bin/helm
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ### Use the following to install NVIDIA Operator
 #helm repo add nvidia https://helm.ngc.nvidia.com/nvidia \
-   && helm repo update
+  # && helm repo update
 
+#sudo apt install nfs-kernel-server
