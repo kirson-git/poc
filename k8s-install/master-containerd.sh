@@ -2,10 +2,6 @@
 
 ### Step I   - Docker Install ####
 echo "Please Enter External IP address "
-read EXTERNAL
-
-
-
 
 ### Step II   - Install Kuberneters 1.23.5  ####
 
@@ -70,6 +66,5 @@ kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 #Flannel
 #kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ### Use the following to install NVIDIA Operator
-
 
 #sudo apt install nfs-kernel-server

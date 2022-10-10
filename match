@@ -1,5 +1,0 @@
-matchExpressions:
-    - key: app
-      operator: In
-      values:
-      - runai
