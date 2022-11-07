@@ -1,15 +1,17 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  labels:
-    app: runai
   name: runai
-  namespace: monitoring
+  namespace: kube-prometheus
 spec:
   groups:
   - interval: 10s
     name: runai-rules
     rules:
+    - expr: label_replace(label_replace(label_replace(kube_pod_info, "pod_uuid", "$1",
+        "uid", "(.*)"),"pod_name", "$1", "pod", "(.*)"), "pod_namespace", "$1", "namespace",
+        "(.*)")
+      record: runai_kube_pod_info
     - expr: (sum(runai_pod_group_info) by (pod_group_uuid, detailed_status, node_name,
         node, queue_name, user, workload_name, workload_type, job_name, project, job_type,
         job_uuid)) * on (pod_group_uuid) group_right(detailed_status, node_name, node,
@@ -97,14 +99,18 @@ spec:
       record: runai_dedicated_gpu_pod_group_used_memory_inner
     - expr: runai_pod_group_info * on (pod_group_uuid) group_left() (runai_dedicated_gpu_pod_group_used_memory_inner)
       record: runai_dedicated_gpu_pod_group_used_memory
-    - expr: avg by(pod_group_uuid, job_uuid, gpu, node_name, node, job_name) (label_replace((runai_pod_phase_with_info{gpu_index=~"^[0-9]+$",phase="Running"}
+    - expr: label_replace((runai_pod_phase_with_info{gpu_index=~"^[0-9]+$",phase="Running"}
         == 1), "gpu", "$1", "gpu_index", "(.+)") * on(node_name, node, gpu) group_left()
-        label_replace(runai_node_gpu_used_memory, "node_name", "$1", "node", "(.+)"))
+        label_replace(runai_node_gpu_used_memory, "node_name", "$1", "node", "(.+)")
+      record: runai_shared_gpu_pod_used_memory_with_pod_info
+    - expr: avg by(pod_group_uuid, job_uuid, gpu, node_name, node, job_name) (runai_shared_gpu_pod_used_memory_with_pod_info)
       record: runai_shared_gpu_pod_group_used_memory
     - expr: (runai_dedicated_gpu_pod_group_used_memory or runai_shared_gpu_pod_group_used_memory)
       record: runai_pod_group_used_gpu_memory_by_gpu
     - expr: sum by(pod_group_uuid, job_uuid) (runai_pod_group_used_gpu_memory_by_gpu)
       record: runai_pod_group_used_gpu_memory
+    - expr: runai_shared_gpu_pod_used_memory_with_pod_info or runai_dedicated_gpu_pod_used_memory_with_pod_info
+      record: runai_pod_used_gpu_memory_with_pod_info
     - expr: sum without (container, job, namespace, pod, service, endpoint, instance)
         (instance:node_cpu_utilisation:rate5m * on (pod, namespace) group_left(node)
         (kube_pod_info *0+1))
@@ -218,6 +224,11 @@ spec:
       record: runai_gpu_pod_count
     - expr: runai_pod_gpu_utilization_with_pod_info / on(gpu, node) group_left() runai_gpu_pod_count
       record: runai_pod_normalized_gpu_utilization_with_pod_info
+    - expr: runai_kube_pod_info * on (pod_uuid) group_right(pod_name, pod_namespace)
+        runai_pod_gpu_utilization
+      record: runai_gpu_sharing_pod_gpu_utilization_v2_with_pod_info
+    - expr: runai_gpu_sharing_pod_gpu_utilization_v2_with_pod_info or runai_dedicated_gpu_pod_gpu_utilization_with_pod_info
+      record: runai_pod_gpu_utilization_v2_with_pod_info
     - alert: RunaiAgentPullRateLow
       annotations:
         summary: Runai Agent fails pulling configuration from the backend (instance
@@ -424,3 +435,4 @@ spec:
     - expr: runai_workload_wait_time_per_second + (runai_workload_total_wait_time
         or runai_workload_wait_time_per_second * 0)
       record: runai_workload_total_wait_time
+
