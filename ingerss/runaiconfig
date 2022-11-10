@@ -1,0 +1,81 @@
+apiVersion: v1
+items:
+- apiVersion: run.ai/v1
+  kind: RunaiConfig
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: runai-cluster
+      meta.helm.sh/release-namespace: runai
+    creationTimestamp: "2022-11-09T16:10:40Z"
+    finalizers:
+    - helm.sdk.operatorframework.io/uninstall-release
+    generation: 2
+    labels:
+      app.kubernetes.io/managed-by: Helm
+    name: runai
+    namespace: runai
+    resourceVersion: "24704552"
+    uid: 71d3aed6-203a-40be-83c9-ae34ec71dac3
+  spec:
+    agent:
+      authAsApp: true
+      clientId: ce3e0007-3570-44d4-b794-d25f54027ddf
+      clientName: runai_agent_runai
+      clientSecret: c1101cb8-7146-48ea-b029-12908fb53d3a
+      endpoint: https://nvidia-demo.runailabs.com
+      rejectUnauthorized: false
+    cluster-sync:
+      SSLCertificateVerification: false
+      authAsApp: true
+      clientId: ce3e0007-3570-44d4-b794-d25f54027ddf
+      clientName: runai_agent_runai
+      clientSecret: c1101cb8-7146-48ea-b029-12908fb53d3a
+      endpoint: https://nvidia-demo.runailabs.com
+    global:
+      certMangerIssuerEmail: support@run.ai
+      clusterDomain: https://nvidia-cloud.runai-poc.com
+      gkeCluster: false
+      openshift: false
+      postgresql:
+        postgresqlDatabase: backend
+      pspEnabled: false
+      useCertManager: false
+    init-ca:
+      enabled: true
+    mps-server:
+      enabled: false
+    project-controller:
+      clusterWideSecret: true
+      createNamespaces: true
+      createRoleBindings: true
+      createServiceMonitors: true
+      limitRange: false
+    researcher-service:
+      args:
+        authEnabled: true
+        logoutLink: https://nvidia-demo.runailabs.com/auth/realms/runai/protocol/openid-connect/logout?redirect_uri=
+      enabled: true
+      ingress:
+        enabled: false
+      oauthProxy:
+        clientId: researcher-ui
+        clientSecret: <UPDATE_CLIENT_SECRET>
+        oidcIssuerDN: nvidia-demo.runailabs.com
+        oidcIssuerURL: https://nvidia-demo.runailabs.com/auth/realms/runai
+        providerType: oidc
+    runai-container-toolkit:
+      enabled: true
+    runaiBackend:
+      clusterId: 4f839840-fe3f-4b56-813a-f6e09f3b84dd
+      clusterName: nvidia-cloud-cluster
+      password: unused
+      username: unused
+  status:
+    conditions:
+    - lastTransitionTime: "2022-11-09T16:10:42Z"
+      status: "True"
+      type: Initialized
+    - lastTransitionTime: "2022-11-09T16:11:01Z"
+      reason: UpgradeSuccessful
+      status: "True"
+      type: Deployed
