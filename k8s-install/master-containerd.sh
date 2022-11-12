@@ -64,7 +64,7 @@ sudo mv helm-linux-amd64 /usr/local/bin/helm
 #Calico
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 #Flannel
-#kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ### Use the following to install NVIDIA Operator
 
 #sudo apt install nfs-kernel-server

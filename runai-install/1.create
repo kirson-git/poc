@@ -6,6 +6,8 @@ EXTERNAL=
 
 echo "Please select node to label"
 kubectl get nodes 
+
+echo "Please enter 
 echo "kubectl label node <NODE-NAME> node-role.kubernetes.io/runai-system=true"
 
 

@@ -1,0 +1,177 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-riva-api
+  namespace: runai-phd
+  labels:
+    app: riva-api
+    chart: riva-api-2.7.0
+    release: release-name
+    heritage: Helm
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: "8002"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: http
+      name: triton-http
+    - port: 8001
+      targetPort: grpc
+      name: triton-grpc
+    - port: 8002
+      targetPort: metrics
+      name: triton-metrics
+    - port: 50051
+      targetPort: speech-grpc
+      name: riva-speech
+  selector:
+    app: riva-api
+    release: release-name
+---
+# Source: riva-api/templates/deployment.yaml
+# Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-riva-api
+  namespace: runai-phd
+  labels:
+    app: riva-api
+    chart: riva-api-2.7.0
+    release: release-name
+    heritage: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: riva-api
+      release: release-name
+  template:
+    metadata:
+      labels:
+        app: riva-api
+        release: release-name
+
+    spec:
+      schedulerName: runai-scheduler
+      containers:
+        - name: riva-speech-api
+          image: nvcr.io/nvidia/riva/riva-speech:2.7.0
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          command: ["/opt/riva/bin/start-riva"]
+          args:
+            - "--asr_service=true"
+            - "--nlp_service=true"
+            - "--tts_service=true"
+          env:
+            - name: TRTIS_MODEL_STORE
+              value: "/data/models"
+            - name: LD_PRELOAD
+              value: ""
+          ports:
+            - containerPort: 50051
+              name: speech-grpc
+            - containerPort: 8000
+              name: http
+            - containerPort: 8001
+              name: grpc
+            - containerPort: 8002
+              name: metrics
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:50051"]
+            initialDelaySeconds: 5
+          livenessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:50051"]
+            initialDelaySeconds: 10
+          startupProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:50051"]
+            initialDelaySeconds: 10
+            failureThreshold: 12
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /data/
+              name: workdir
+
+      imagePullSecrets:
+        - name: imagepullsecret
+      initContainers:
+        - name: riva-model-init
+          image: nvcr.io/nvidia/riva/riva-speech:2.7.0-servicemaker
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: artifact-volume
+              mountPath: /rmir
+            - name: workdir
+              mountPath: /data/
+          command:
+            - download_and_deploy_ngc_models
+            - "nvidia/riva/rmir_asr_conformer_en_us_str:2.7.0"
+            - "nvidia/riva/rmir_asr_conformer_en_us_ofl:2.7.0"
+            - "nvidia/riva/rmir_nlp_intent_slot_bert_base:2.7.0"
+            - "nvidia/riva/rmir_nlp_question_answering_bert_base:2.7.0"
+            - "nvidia/riva/rmir_nlp_punctuation_bert_base_en_us:2.7.0"
+            - "nvidia/riva/rmir_nlp_text_classification_bert_base:2.7.0"
+            - "nvidia/riva/rmir_nlp_named_entity_recognition_bert_base:2.7.0"
+            - "nvidia/riva/rmir_tts_fastpitch_hifigan_en_us:2.7.0"
+          env:
+            - name: NGC_CLI_ORG
+              value: "nvidia"
+            - name: NGC_CLI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: modelpullsecret
+                  key: apikey
+            - name: MODEL_DEPLOY_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: riva-model-deploy-key
+                  key: key
+      volumes:
+        - name: artifact-volume
+          hostPath:
+            path: /data/riva/
+            type: DirectoryOrCreate
+        - name: workdir
+          hostPath:
+            path: /data/riva
+            type: DirectoryOrCreate
+---
