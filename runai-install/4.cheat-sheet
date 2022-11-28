@@ -1,0 +1,446 @@
+Install K8S
+
+Worker: ( Get the join command → kubeadm token create --print-join-command )
+
+
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+sudo sh -c ' cat <<EOF> /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF'
+
+sudo systemctl restart docker
+
+sudo sh -c 'cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF'
+
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-get update
+sudo apt-get install -y kubelet=1.23.5-00 kubeadm=1.23.5-00
+
+sudo swapoff -a
+
+sudo apt-mark hold kubeadm kubelet kubectl
+
+sh 
+
+ 
+
+DCGM - Disable RUN:AI
+
+
+kubectl -n gpu-operator patch daemonset nvidia-device-plugin-daemonset \
+-p '{"spec": {"template": {"spec": {"nodeSelector": {"non-existing": "false"}}}}}'
+kubectl -n gpu-operator patch daemonset nvidia-dcgm-exporter \
+-p '{"spec": {"template": {"spec": {"nodeSelector": {"non-existing": "false"}}}}}'
+ 
+
+Ingress with LetsEncrypte
+
+
+apiVersion: cert-manager.io/v1
+   kind: Issuer
+   metadata:
+     name: letsencrypt-prod
+     namespace: runai-backend
+   spec:
+     acme:
+       server: https://acme-v02.api.letsencrypt.org/directory
+       email: kirson@run.ai
+       privateKeySecretRef:
+         name: letsencrypt-prod
+       solvers:
+       - http01:
+           ingress:
+             class: nginx
+             
+Add to Ingress              
+cert-manager.io/issuer: letsencrypt-prod
+ 
+
+Submit job 
+
+
+runai submit a2 -i gcr.io/run-ai-demo/quickstart:legacy -g 2 -p team-a
+ 
+
+NFS PV,PVC
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 100Gi
+  nfs:
+    path: /runai/shared/
+    server: 10.129.171.162
+    readOnly: false
+NFS PVC
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+NFS Test POD
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nfs-test
+spec:
+  containers:
+    - name: nfsvol
+      image: debian
+      volumeMounts:
+        - name: nfsvol
+          mountPath: /data
+      command: ["/bin/sh"]
+      args: ["-c", "ls -la /data ; df -h /data"]
+  volumes:
+    - name: nfsvol
+      persistentVolumeClaim:
+        claimName: nfs-pvc
+ 
+
+Test-Pod
+
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nfs-pod
+spec:
+  # Add the server as an NFS volume for the pod
+  volumes:
+    - name: nfs-volume
+      nfs:
+        # URL for the NFS server
+        server:  ENTER HERE
+        path: ENTER HERE
+
+  # In this container, we'll mount the NFS volume
+  # and write the date to a file inside it.
+  containers:
+    - name: app
+      image: alpine
+
+      # Mount the NFS volume in the container
+      volumeMounts:
+        - name: nfs-volume
+          mountPath: /var/nfs
+
+      # Write to a file inside our NFS
+      command: ["/bin/sh"]
+      args: ["-c", "touch /var/nfs/nfs-OK ; ls -la /var/nfs/ ; df -h /var/nfs/"]
+Create Registry Secret 
+
+
+docker login reg.name 
+ create secret generic regcred \
+ --from-file=.dockerconfigjson=/root/.docker/config.json  \
+ --type=kubernetes.io/dockerconfigjson -n runai
+
+kubectl label secret  regcred runai/cluster-wide="true" -n runai
+ 
+
+Label Run:AI - AI Optimization and Orchestration   
+
+
+kubectl label node ip-192-168-0-198.ec2.internal \
+ node-role.kubernetes.io/runai-system=true
+ 
+
+Delete Workload template    
+
+
+kubectl delete InteractiveWorkload -n runai-team-a --all
+ 
+
+ Enter a running POD     
+
+
+kubectl -n runai-team-b exec --stdin --tty shrimp-trainer-s3-test-0-0 --container shrimp-trainer-s3-test -- /bin/bash
+ Delete run ai cluster 
+
+
+kubectl patch RunaiConfig runai -n runai -p '{"metadata":{"finalizers":[]}}' --type="merge"
+kubectl delete RunaiConfig runai -n runai
+helm delete runai-cluster runai -n runai
+
+Install NVIDIA Operator with Minimal options  
+
+
+helm install --wait --generate-name \
+     -n gpu-operator --create-namespace \
+      nvidia/gpu-operator \
+      --set driver.enabled=false \
+      --set toolkit.enabled=false \ 
+      --set migManager.enabled=false
+
+Delete CRD
+
+
+k delete crd `k get crd | grep run.ai | awk '{print $1}'` --force --grace-period=0
+Remove Scheduling restriction on the master node
+
+
+kubectl taint node <mymasternode-name> node-role.kubernetes.io/master:NoSchedule-
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+Helpful Helm Commands
+
+
+helm get values <chart name> -n <namespace> >> textfile.txt
+example: helm get values runai-cluster -n runai >> cluster-values.yaml
+ 
+
+Disable the UGLY permission error
+
+
+chmod go-r <kubeconfig>
+ 
+
+Install 2.5 Self Hosted Backend
+
+
+helm repo add runai-backend https://backend-charts.storage.googleapis.com
+helm repo update
+helm install runai-backend -n runai-backend runai-backend/runai-backend  \
+    -f runai-backend-values.yaml
+
+Install k8s - exposed outside
+
+
+sudo kubeadm init --pod-network-cidr 192.168.0.0/16 ֿ
+--kubernetes-version 1.23.6 --control-plane-endpoint 18.218.171.29:6443 
+ Self Hosted Multi-Cluster     
+
+Guy, the steps for unified ui on the self hosted multi cluster are (after configuring researcher authentication on the api server):
+let the External IP of master node be 1.2.3.4 and Internal IP of master node be 5.6.7.8.edit the values file before installing and make sure you have the following:
+
+
+cert-manager:
+  enabled: true
+ingress-nginx:
+  enabled: true
+  controller:
+    service:
+      externalIPs:
+        - 1.2.3.4
+        - 4.5.6.7
+runai-operator:
+  config:
+    global:
+      clusterDomain: 'https://runai-1-2-3-4.webredirect.org' (notice the external ip here is with DASHES instead of dots)
+      useCertManager: true
+    researcher-service:
+      ingress:
+        enabled: true
+ 
+
+ In case of bug in ca issuer kubeapi
+
+
+- --service-account-signing-key-file=/etc/kubernetes/pki/sa.key
+- --service-account-issuer=kubernetes.default.svc
+ 
+
+ Create air-gapped preinstall diagnostic script 
+
+ 
+
+Releases · run-ai/preinstall-diagnostics 
+
+ 
+
+
+sudo docker save --output  preinstall-diagnostics.tar \ 
+ gcr.io/run-ai-lab/preinstall-diagnostics:v2.1.0 
+sudo docker load preinstall-diagnostics.tar 
+sudo docker tag gcr.io/run-ai-lab/preinstall-diagnostics:v2.1.0 quay.io/kirson/run.ai/dig 
+sudo docker push quay.io/kirson/run.ai/dig  \ 
+./preinstall-diagnostics-linux-amd64 --image quay.io/kirson/run.ai/dig 
+ delete All Docker images 
+
+
+docker system prune -a
+docker image prune
+ 
+
+Install 1.10 GPU Operator
+
+
+helm install --wait -n gpu-operator --create-namespace --version v1.10.1 --set driver.enabled=false --set operator.defaultRuntime=docker --set toolkit.enabled=true gpu-operator nvidia/gpu-operator
+ 
+
+Enabled 
+
+
+ Create air-gapped preinstall diagnostic script 
+
+
+
+
+kubectl rollout restart -n runai deployment/runai-operator
+ 
+
+Debug pod 
+
+
+kubectl run -i --tty --rm debug --image=fedora --restart=Never -- sh
+ 
+
+Access kubeflow using proxy 
+
+
+export NAMESPACE=istio-system
+kubectl port-forward -n ${NAMESPACE} svc/istio-ingressgateway 8080:80
+
+email user@example.com
+ password is 12341234
+ 
+
+Access Diag script 
+
+
+https://github.com/run-ai/preinstall-diagnostics/releases
+CRD
+
+
+NVIDIA 
+https://raw.githubusercontent.com/NVIDIA/gpu-operator/release-1.11/bundle/manifests/nvidia.com_clusterpolicies.yaml
+
+RUN:AI
+https://raw.githubusercontent.com/run-ai/public/main/2.7.15/runai-crds.yaml
+ 
+
+Doma
+
+
+cert = no
+clusterDomain: htts://fqdn
+ingress = false ( if they have one)
+k edit runaiconfig -n runai -> 
+ingress 
+tls-secret : tls-secret
+ 
+
+Add another DNS server for Kubernetes
+
+
+#kubectl -n kube-system edit cm coredns
+
+Data: 
+  Corefile: |
+      .:53 {
+          errors
+          health
+          ready
+          kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+          }
+          prometheus :9153
+          forward . 8.8.8.8 8.8.4.4
+          cache 30
+          loop
+          reload
+          loadbalance
+          hosts cmaster.ntu.test {
+             172.21.140.20 cmaster.ntu.test
+             fallthrough
+          }
+       }
+ 
+
+Air-Gapped 
+
+
+#Create Local Registry
+
+docker run -d -p 5000:5000 --restart=always --name registry registry:2
+
+#Get File from run.ai SE for installation 
+tar xvf runai-2.7.17.tar.gz
+cd deploy
+
+#Pre-Req
+kubectl create namespace runai-backend
+wget --content-disposition https://app.run.ai/v1/k8s/admin-cli/linux
+chmod +x runai-adm
+sudo mv linux-amd64/helm /usr/local/bin/
+kubectl label node <NODE-NAME> node-role.kubernetes.io/runai-system=true
+
+runai-adm generate-values    --external-ips 52.208.160.236,10.0.14.155  \
+ --domain air-gapped.runai-23.com \ 
+ --tls-cert /home/ubuntu/cert.pem \
+ --tls-key /home/ubuntu//key.pem  \ 
+ --nfs-server 10.0.14.155  \
+ --nfs-path /nas-storage --airgapped
+
+export REGISTRY_URL=localhost:5000
+sudo -E ./prepare_installation.sh
+
+helm install runai-backend runai-backend-2.7.17.tgz -n \
+    runai-backend -f runai-backend-values.yaml 
+
+
+ helm install runai-backend runai-backend/runai-backend-v2.7.15.tgz -n runai-backend --create-namespace -f runai-backend/runai-backend-helm-release.yaml
+
+ 
+
+RKE2
+
+
+mkdir -p /etc/rancher/rke2
+echo "container-runtime-endpoint: unix:///run/containerd/containerd.sock" > /etc/rancher/rke2/config.yaml
+Inference 2.7
+
+
+kubectl edit cm config-features -n knative-serving
+
+Add 
+kubernetes.podspec-schedulername: enabled
+prom
+
+
+kubectl edit prometheus -n kube-prometheus
+kubectl label ns runai prometheus.ai.conti.de/monitor=true
+kubectl get prometheusrules -A
+
+/etc/ssl/certs/root-ca.pem
+"--oidc-ca-file=/etc/ssl/certs/runai-oidc-root-ca.pem"
+"--oidc-ca-file=/etc/ssl/certs/root-ca.pem"
+ 
+
+
+While install - change
+clusterDomain: ntu.runai-poc.com
+
+kubectl create secret tls runai-poc.com -n runai \
+ --cert ./runai-poc-com.crt --key ./runai-poc-com.key
+kubectl get ingess yaml >> erez.yaml
+kubectl edit -n runai runaiconfig --> Disable ingress: Enabled: False
+
