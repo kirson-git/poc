@@ -1,0 +1,103 @@
+apiVersion: run.ai/v2alpha1
+kind: InteractivePolicy
+metadata:
+  name: interactive-policy
+  namespace: runai
+spec:
+
+  image:
+    rules:
+      required: true 
+      options:
+        - value: gcr.io/basket/pycharm-demo
+          name: Pycharm - Demo
+        - value: hubble.jordan.com:5000/bnym/linux/24c/24c/images/python_base:p36-cuda-11.3.0-6
+          name: Python - Base
+  volumes:
+    items:
+      vol1:
+        value:
+          sourcePath: "/data/projects"
+          targetPath: "/data/projects"
+        rules:
+          canEdit: false
+          canRemove: false
+      vol2:
+        value:
+          sourcePath: "/data/home"
+          targetPath: "/data/home"
+        rules:
+          canEdit: false
+          canRemove: false
+      vol3:
+        value:
+          sourcePath: "/var/lib/sss/pipes"
+          targetPath: "/var/lib/sss/pipes"
+        rules:
+          canEdit: false
+          canRemove: false
+      vol4:
+        value:
+          sourcePath: "/data/.conda/envs"
+          targetPath: "/data/.conda/envs"
+        rules:
+          canEdit: false
+          canRemove: false
+      vol5:
+        value:
+          sourcePath: "/data/spark_hadoop_config"
+          targetPath: "/data/spark_hadoop_config"
+        rules:
+          canEdit: false
+          canRemove: false
+  allowPrivilegeEscalation:
+    rules:
+      canEdit: false
+    value: false
+      
+  runAsUser:
+    rules:
+      canEdit: false
+    value: true
+
+  workingDir:
+    rules:
+      canEdit: false
+
+  createHomeDir:
+    value: false
+    rules:
+      canEdit: false
+
+  imagePullPolicy:
+    value: IfNotPresent
+    rules:
+      canEdit: false
+
+  gpu:
+    value: "0.1"
+    rules:
+      canEdit: true
+      max: "32"
+
+  cpu:
+    value: "0.1"
+    rules:
+      canEdit: true
+      max: "32"
+ 
+  cpuLimit:
+    value: "20"
+    rules:
+      canEdit: false
+
+  memoryLimit:
+    value: 400G
+    rules:
+      canEdit: false
+
+  memory:
+    value: 100M
+    rules:
+      canEdit: false
+
