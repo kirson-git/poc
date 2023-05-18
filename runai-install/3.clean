@@ -1,6 +1,0 @@
-kubectl patch RunaiConfig runai -n runai -p '{"metadata":{"finalizers":[]}}' --type="merge"
-kubectl delete RunaiConfig runai -n runai
-helm delete runai-cluster runai -n runai
-
-k delete crd `k get crd | grep run.ai | awk '{print $1}'` --force --grace-period=0
-
