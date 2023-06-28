@@ -26,7 +26,7 @@ bin_dir: /usr/local/bin
 #loadbalancer_apiserver_port: 6443
 
 loadbalancer_apiserver_localhost: false
-apiserver_loadbalancer_domain_name: "haproxy.rakuten.local"
+apiserver_loadbalancer_domain_name: "haproxy.kirson.local"
 loadbalancer_apiserver:
   address: 192.168.10.205
   port: 8443
