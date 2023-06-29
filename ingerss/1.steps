@@ -1,3 +1,0 @@
-In yaml -> clusterDomain: ‘https://ntu-second-server.runai-poc.com’
-kubectl create ns runai
-kubectl create secret tls runai-cluster-domain-tls-secret -n runai --cert ./cert.pem --key ./key.pem
