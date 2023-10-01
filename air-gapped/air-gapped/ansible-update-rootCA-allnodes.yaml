@@ -1,0 +1,28 @@
+---
+- name: Install Runai
+  hosts: all
+  gather_facts: true
+  vars_files:
+    - runai_vars.yaml
+  become: yes
+  tasks:
+    - name: runai-client.crt
+      ansible.builtin.copy:
+        src:  /home/kirson/runai.local/air-gapped/certs/rootCA.pem
+        dest: /usr/local/share/ca-certificates/runai-client.crt
+        owner: root
+        mode: '0600'
+
+    - name: restart-ca
+      shell: /usr/sbin/update-ca-certificates --fresh
+
+
+    - name: restart kubelet
+      ansible.builtin.systemd:
+        state: restarted
+        name: kubelet
+
+    - name: restart containerd
+      ansible.builtin.systemd:
+        state: restarted
+        name: containerd

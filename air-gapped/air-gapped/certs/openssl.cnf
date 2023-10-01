@@ -1,0 +1,12 @@
+# Extensions to add to a certificate request
+basicConstraints       = CA:FALSE
+authorityKeyIdentifier = keyid:always, issuer:always
+keyUsage               = nonRepudiation, digitalSignature, keyEncipherment, dataEncipherment
+subjectAltName         = @alt_names
+[ alt_names ]
+DNS.5 = *.apps.81.runai.local
+DNS.6 = api.81.runai.local
+DNS.7 = *.apps.kirson.runai.local 
+DNS.8 = api.kirson.runai.local
+DNS.10 = *.runai.haproxy.runai.local
+DNS.11 = *.runai.local

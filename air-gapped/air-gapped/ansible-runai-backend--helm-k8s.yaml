@@ -1,0 +1,19 @@
+---
+- name: Install runai-backend using Helm
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - runai_vars.yaml
+  tasks:
+    - name: Helm upgrade/install runai-backend
+      community.kubernetes.helm:
+        name: runai-backend
+        chart_ref: "/tmp/{{ version }}/deploy/control-plane-{{ version }}.tgz"
+        release_namespace: runai-backend
+        create_namespace: no
+        values:
+          global:
+            domain: "{{ domain }}"
+        values_files:
+          - "/tmp/{{ version }}/deploy/custom-env.yaml"
+        update_repo_cache: no
