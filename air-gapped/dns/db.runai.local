@@ -1,0 +1,26 @@
+;
+; BIND data file for runai.local
+;
+$TTL    2d
+$ORIGIN runai.local.
+@       IN      SOA     ns.runai.local. admin.runai.local. (
+                              4         ; Serial
+                             12h        ; Refresh
+                             15m        ; Retry
+                              3w        ; Expire
+                             2h )       ; Negative Cache TTL
+;
+@       IN      NS      ns.runai.local.
+ns    		        IN        A       192.168.0.00
+
+; Control-Plane
+
+; Proxy
+haproxy			IN        A       192.168.0.205
+
+; Kirson - openshift 4.12.33
+*.apps.ocp1		IN        A       192.168.0.200
+api.ocp1		IN        A       192.168.0.201
+
+
+
