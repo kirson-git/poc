@@ -1,5 +1,6 @@
-Create 
+#mkdir cache config etc records run var
+#vi /etc/systemd/resolved.conf
+#DNSStubListener=n
+#systemctl restart systemd-resolved
 
-/etc/bind
-/var/cached/bind
-/car/lib/bind
+

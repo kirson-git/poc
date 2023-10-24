@@ -11,16 +11,18 @@ $ORIGIN runai.local.
                              2h )       ; Negative Cache TTL
 ;
 @       IN      NS      ns.runai.local.
-ns    		        IN        A       192.168.0.00
+ns    		        IN        A       192.168.0.100
 
 ; Control-Plane
 
 ; Proxy
 haproxy			IN        A       192.168.0.205
 
-; Kirson - openshift 4.12.33
-*.apps.ocp1		IN        A       192.168.0.200
-api.ocp1		IN        A       192.168.0.201
+; Kirson - openshift 4.12
+api.ocp1		IN        A       192.168.0.200
+*.apps.ocp1		IN        A       192.168.0.201
 
+; Infrastracutre
 
+star			IN        A       192.168.0.100
 
