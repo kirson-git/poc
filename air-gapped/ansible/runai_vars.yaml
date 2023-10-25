@@ -1,0 +1,12 @@
+---
+version: "2.13.19"
+cluster_name: "runai"
+registry_address: "harbor.runai.local"
+username: "admin"
+password: "kirson"
+kubeconfig_path: "~kirson/runai.local/inventory/runai.local/artifacts/admin.conf"
+rootCA: "~kirson/runai.local/air-gapped/certs/rootCA.pem"
+key: "~kirson/runai.local/air-gapped/certs/runai.key"
+crt: "~kirson/runai.local/air-gapped/certs/runai.crt"
+domain: haproxy.runai.local
+node: master-0.runai.local master-1.runai.local master-2.runai.local worker-0.runai.local worker-1.runai.local worker-2.runai.local

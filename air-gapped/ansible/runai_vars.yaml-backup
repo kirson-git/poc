@@ -1,0 +1,14 @@
+---
+version: "2.13.16"
+registry_address: "harbor.runai.local"
+username: "admin"
+password: "kirson"
+kubeconfig_path: "~kirson/runai.local/inventory/runai.local/artifacts/admin.conf"
+rootCA: "~kirson/runai.local/air-gapped/cert/rootCA.pem"
+cluster_name: "runai"
+charturl: "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts"
+domain: haproxy.runai.local
+front-client_id: "runai"
+front-username: "test@run.ai"
+front-password: "Abcd!234"
+cluster_name: "runai"

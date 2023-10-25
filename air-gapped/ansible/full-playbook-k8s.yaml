@@ -1,0 +1,26 @@
+---
+- name: Update current VARS
+  import_playbook: vars.yaml
+
+
+- name: Update Self Signed For Docker & kubelet
+  import_playbook: ansible-update-rootCA-allnodes.yaml
+
+- name: Prepare Monitoring &  NFS Storage for PVCs
+  import_playbook:  ansible-pre-req-k8s.yaml
+
+- name: Download RUNAI Air-Gapepd file & upload files to Local Harbor Registry
+  import_playbook:  ansible-harbor-upload.yaml
+
+
+- name: Install Run:AI Controller Helm Chart 
+  import_playbook:  ansible-runai-backend--helm-k8s.yaml
+
+
+- name: Update TLS Secret 
+  import_playbook: ansible-tls-secret.yaml
+
+
+- name: Create ConfigMap for Patch
+  import_playbook: ansible-configmap.yaml
+
