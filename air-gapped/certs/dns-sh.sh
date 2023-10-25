@@ -3,11 +3,11 @@ set -e # this will make the script stop on the first error
 set -u # this will make the script stop if there is an undefined variable
 
 # Generate the root key with the provided passphrase
-openssl genrsa -des3 -passout pass:YourPassphrase -out rootCA.key 2048
+openssl genrsa -des3 -out rootCA.key 2048
 
 # Generate root certificate
-openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 730 -out rootCA.pem \
-    -subj "/C=US/ST=CA/O=MyOrg, Inc./CN=rootca.local"
+openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 730 -out rootCA.pem
+
 
 # Display the certificate
 openssl x509 -in rootCA.pem -text -noout
@@ -16,31 +16,20 @@ openssl x509 -in rootCA.pem -text -noout
 openssl genrsa -out runai.key 2048
 
 # Generate a CSR for your service. Adjust the subject fields as needed.
-openssl req -new -key runai.key -out runai.csr \
-    -subj "/C=US/ST=CA/O=MyOrg, Inc./CN=runai.local"
+openssl req -new -key runai.key -out runai.csr
 
 # Create the configuration file for the extensions
 cat << EOF > openssl.cnf
-[req]
-distinguished_name = req_distinguished_name
-req_extensions = v3_req
-prompt = no
-
-[req_distinguished_name]
-# empty; we are providing this information in the -subj option of the req command
-
-[v3_req]
-# Extensions to add to a certificate request
 basicConstraints = CA:FALSE
 authorityKeyIdentifier = keyid:always, issuer:always
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = *.apps.81.runai.local
-DNS.2 = api.81.runai.local
-DNS.3 = *.apps.kirson.runai.local
-DNS.4 = api.kirson.runai.local
+DNS.1 = *.apps.ocp1.runai.local
+DNS.2 = api.ocp1.runai.local
+DNS.3 = *.apps.ocp2.runai.local
+DNS.4 = api.ocp2.runai.local
 DNS.5 = *.runai.haproxy.runai.local
 DNS.6 = *.runai.local
 EOF
