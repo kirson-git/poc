@@ -71,7 +71,9 @@ function k8s-install {
 
 # *** init K8s
 function k8s-init {
-	server_ip=$(curl -s ifconfig.me)
+        echo "Please enter the server IP:"
+        read ip
+	server_ip=$ip
 	echo -e "${GREEN} init k8s...${NC}"
         kubeadm init --pod-network-cidr=10.244.0.0/16 --kubernetes-version=v${k8s_version} --token-ttl 186h --control-plane-endpoint=${server_ip}
         export KUBECONFIG=/etc/kubernetes/admin.conf
